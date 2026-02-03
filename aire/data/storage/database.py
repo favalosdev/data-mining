@@ -1,71 +1,46 @@
-"""Database storage using SQLAlchemy."""
+"""Database storage using Supabase client for AIRE data mining."""
 
-from datetime import datetime
-from typing import List, Dict, Any
+from supabase import create_client, Client
+import os
+from dotenv import load_dotenv
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float
-from sqlalchemy.orm import sessionmaker, declarative_base
+load_dotenv()
 
-from aire.config.settings import Settings
 
-Base = declarative_base()
+class SupabaseDB:
+    """Supabase database client for AIRE data mining repository."""
 
-class Incident(Base):
-    __tablename__ = "incidents"
-    id = Column(Integer, primary_key=True)
-    title = Column(String(255))
-    description = Column(Text)
-    date = Column(DateTime)
-    category = Column(String(50))
-    severity = Column(Float)
+    def __init__(self):
+        """Initialize Supabase client."""
+        self.url = os.getenv("SUPABASE_URL")
+        self.key = os.getenv("SUPABASE_KEY")
 
-class Benchmark(Base):
-    __tablename__ = "benchmarks"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255))
-    metric = Column(String(100))
-    value = Column(Float)
-    category = Column(String(50))
+        if not self.url or not self.key:
+            raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY environment variables")
 
-class Evaluation(Base):
-    __tablename__ = "evaluations"
-    id = Column(Integer, primary_key=True)
-    assessment = Column(String(255))
-    score = Column(Float)
-    category = Column(String(50))
-    date = Column(DateTime)
+        self.client: Client = create_client(self.url, self.key)
 
-class Database:
-    def __init__(self, url: str):
-        self.engine = create_engine(url)
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
+    @property
+    def incidents(self):
+        """Access incidents table."""
+        return self.client.table("incidents")
 
-    def store_incidents(self, data: List[Dict[str, Any]]) -> None:
-        session = self.Session()
-        for item in data:
-            # Convert date string to datetime if needed
-            if 'date' in item and isinstance(item['date'], str):
-                item['date'] = datetime.fromisoformat(item['date'])
-            incident = Incident(**item)
-            session.add(incident)
-        session.commit()
-        session.close()
+    @property
+    def benchmarks(self):
+        """Access benchmarks table."""
+        return self.client.table("benchmarks")
 
-    def store_benchmarks(self, data: List[Dict[str, Any]]) -> None:
-        session = self.Session()
-        for item in data:
-            benchmark = Benchmark(**item)
-            session.add(benchmark)
-        session.commit()
-        session.close()
+    @property
+    def evals(self):
+        """Access evals table."""
+        return self.client.table("evals")
 
-    def store_evaluations(self, data: List[Dict[str, Any]]) -> None:
-        session = self.Session()
-        for item in data:
-            if 'date' in item and isinstance(item['date'], str):
-                item['date'] = datetime.fromisoformat(item['date'])
-            evaluation = Evaluation(**item)
-            session.add(evaluation)
-        session.commit()
-        session.close()
+    @property
+    def versions(self):
+        """Access versions table."""
+        return self.client.table("versions")
+
+    @property
+    def epoch_models(self):
+        """Access epoch_models table."""
+        return self.client.table("epoch_models")

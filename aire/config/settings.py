@@ -1,14 +1,22 @@
 """Configuration settings for AIRE."""
 
 from typing import Dict, Optional
-
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Settings:
     """Application settings loaded from environment variables."""
 
     def __init__(self) -> None:
+        # Supabase configuration
+        self.supabase_url: str = os.getenv("SUPABASE_URL", "")
+        self.supabase_key: str = os.getenv("SUPABASE_KEY", "")
+        
+        # Database URL - Supabase handles PostgreSQL
         self.database_url: str = os.getenv("DATABASE_URL", "sqlite:///aire.db")
+        
         self.api_keys: Dict[str, Optional[str]] = {
             "newsapi": os.getenv("NEWSAPI_KEY"),
             "arxiv": None,  # arXiv doesn't require API key
